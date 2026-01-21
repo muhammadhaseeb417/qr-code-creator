@@ -20,12 +20,6 @@
 
 <br />
 
-## 📸 Screenshots
-
-<div align="center">
-  <img src="https://via.placeholder.com/800x400?text=QR+Studio+Screenshot" alt="QR Studio Interface" />
-</div>
-
 ## ✨ Features
 
 ### 📱 Multiple QR Code Types
