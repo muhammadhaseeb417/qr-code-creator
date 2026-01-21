@@ -60,15 +60,12 @@ interface EventData {
 const QRCodeCreator: React.FC = () => {
   const [isDark, setIsDark] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<QRType>("wifi");
-  const [qrData, setQrData] = useState<string>("");
-  const [qrColor, setQrColor] = useState<string>("");
-  const [qrBgColor, setQrBgColor] = useState<string>("");
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [qrColor, setQrColor] = useState<string>("#ffffff");
+  const [qrBgColor, setQrBgColor] = useState<string>("#0f172a");
   const [qrSize, setQrSize] = useState<number>(300);
-
-  const getDefaultQrColor = () => (isDark ? "#ffffff" : "#0A0E27");
-  const getDefaultQrBgColor = () => (isDark ? "#0f172a" : "#F8FAFC");
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   const [wifiData, setWifiData] = useState<WiFiData>({
     ssid: "",
@@ -102,25 +99,29 @@ const QRCodeCreator: React.FC = () => {
     }
   }, [isDark]);
 
+  useEffect(() => {
+    setQrColor("#000000"); // always dark
+    setQrBgColor("#FFFFFF"); // always light
+  }, [isDark]);
+
   const generateQRData = (): string => {
     let data = "";
     switch (activeTab) {
       case "wifi":
         if (wifiData.ssid) {
-          data = `WIFI:T:${wifiData.encryption};S:${wifiData.ssid};P:${wifiData.password};;`;
+          const esc = (s: string) =>
+            s.replace(/\\/g, "\\\\").replace(/;/g, "\\;");
+
+          const ssid = esc(wifiData.ssid);
+          const pass = esc(wifiData.password);
+
+          if (wifiData.encryption === "nopass") {
+            data = `WIFI:T:nopass;S:${ssid};;`;
+          } else {
+            data = `WIFI:T:${wifiData.encryption};S:${ssid};P:${pass};;`;
+          }
         }
-        break;
-      case "payment":
-        if (paymentData.upiId) {
-          data = `upi://pay?pa=${paymentData.upiId}${paymentData.amount ? `&am=${paymentData.amount}` : ""}${paymentData.note ? `&tn=${encodeURIComponent(paymentData.note)}` : ""}`;
-        }
-        break;
-      case "event":
-        if (eventData.name && eventData.start) {
-          const formatDate = (dateStr: string) =>
-            dateStr.replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-          data = `BEGIN:VEVENT\nSUMMARY:${eventData.name}\nLOCATION:${eventData.location}\nDTSTART:${formatDate(eventData.start)}\nDTEND:${formatDate(eventData.end || eventData.start)}\nDESCRIPTION:${eventData.description}\nEND:VEVENT`;
-        }
+
         break;
       case "url":
         data = url;
@@ -132,97 +133,60 @@ const QRCodeCreator: React.FC = () => {
     return data;
   };
 
-  const drawQRCode = (data: string): void => {
-    if (!data || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const size = qrSize;
-    const moduleCount = 29;
-    const moduleSize = size / moduleCount;
-    const quietZone = 2;
-
-    canvas.width = size;
-    canvas.height = size;
-
-    ctx.fillStyle = qrBgColor || getDefaultQrBgColor();
-    ctx.fillRect(0, 0, size, size);
-
-    ctx.fillStyle = qrColor || getDefaultQrColor();
-    const hash = data
-      .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-
-    for (let row = quietZone; row < moduleCount - quietZone; row++) {
-      for (let col = quietZone; col < moduleCount - quietZone; col++) {
-        const seed = (hash + row * moduleCount + col) * 2654435761;
-        if (seed % 2 === 0) {
-          ctx.fillRect(
-            col * moduleSize,
-            row * moduleSize,
-            moduleSize * 0.95,
-            moduleSize * 0.95,
-          );
-        }
-      }
+  const handleGenerate = async (): Promise<void> => {
+    const data = generateQRData();
+    if (!data) {
+      alert("Please fill in the required fields");
+      return;
     }
 
-    const drawFinderPattern = (x: number, y: number): void => {
-      ctx.fillStyle = qrColor;
-      ctx.fillRect(x, y, moduleSize * 7, moduleSize * 7);
-      ctx.fillStyle = qrBgColor;
-      ctx.fillRect(
-        x + moduleSize,
-        y + moduleSize,
-        moduleSize * 5,
-        moduleSize * 5,
-      );
-      ctx.fillStyle = qrColor;
-      ctx.fillRect(
-        x + moduleSize * 2,
-        y + moduleSize * 2,
-        moduleSize * 3,
-        moduleSize * 3,
-      );
-    };
+    setIsGenerating(true);
 
-    drawFinderPattern(quietZone * moduleSize, quietZone * moduleSize);
-    drawFinderPattern(
-      (moduleCount - 7 - quietZone) * moduleSize,
-      quietZone * moduleSize,
-    );
-    drawFinderPattern(
-      quietZone * moduleSize,
-      (moduleCount - 7 - quietZone) * moduleSize,
-    );
-  };
+    try {
+      const response = await fetch("/api/generate-qr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          data,
+          color: qrColor,
+          bgColor: qrBgColor,
+          size: qrSize,
+        }),
+      });
 
-  const handleGenerate = (): void => {
-    const data = generateQRData();
-    if (data) {
-      setQrData(data);
-      drawQRCode(data);
+      if (!response.ok) {
+        throw new Error("Failed to generate QR code");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setQrDataUrl(url);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+      alert("Failed to generate QR code. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   const handleDownload = (): void => {
-    if (canvasRef.current) {
+    if (qrDataUrl) {
       const link = document.createElement("a");
       link.download = `qrcode-${activeTab}-${Date.now()}.png`;
-      link.href = canvasRef.current.toDataURL("image/png", 1.0);
+      link.href = qrDataUrl;
       link.click();
     }
   };
 
   useEffect(() => {
-    if (qrData) {
-      drawQRCode(qrData);
+    if (qrDataUrl) {
+      handleGenerate();
     }
-  }, [qrColor, qrBgColor, qrSize, isDark]);
+  }, [qrColor, qrBgColor, qrSize]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
@@ -281,11 +245,16 @@ const QRCodeCreator: React.FC = () => {
               <CardContent>
                 <div className="relative">
                   <div className="flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
-                    {qrData ? (
+                    {qrDataUrl ? (
                       <div className="relative">
-                        <canvas
-                          ref={canvasRef}
+                        <img
+                          src={qrDataUrl}
+                          alt="Generated QR Code"
                           className="max-w-full rounded-lg shadow-lg"
+                          style={{
+                            width: `${qrSize}px`,
+                            height: `${qrSize}px`,
+                          }}
                         />
                         {showSuccess && (
                           <div className="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-slate-900/90 rounded-lg animate-in fade-in zoom-in duration-200">
@@ -309,7 +278,7 @@ const QRCodeCreator: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  {qrData && (
+                  {qrDataUrl && (
                     <Button
                       onClick={handleDownload}
                       className="w-full mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md"
@@ -344,13 +313,13 @@ const QRCodeCreator: React.FC = () => {
                     <Input
                       id="qrColor"
                       type="color"
-                      value={qrColor || getDefaultQrColor()}
+                      value={qrColor}
                       onChange={(e) => setQrColor(e.target.value)}
                       className="w-14 h-10 p-1 border-slate-300 dark:border-slate-700"
                     />
                     <Input
                       type="text"
-                      value={qrColor || getDefaultQrColor()}
+                      value={qrColor}
                       onChange={(e) => setQrColor(e.target.value)}
                       className="flex-1 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800"
                     />
@@ -367,13 +336,13 @@ const QRCodeCreator: React.FC = () => {
                     <Input
                       id="bgColor"
                       type="color"
-                      value={qrBgColor || getDefaultQrBgColor()}
+                      value={qrBgColor}
                       onChange={(e) => setQrBgColor(e.target.value)}
                       className="w-14 h-10 p-1 border-slate-300 dark:border-slate-700"
                     />
                     <Input
                       type="text"
-                      value={qrBgColor || getDefaultQrBgColor()}
+                      value={qrBgColor}
                       onChange={(e) => setQrBgColor(e.target.value)}
                       className="flex-1 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800"
                     />
@@ -731,10 +700,20 @@ const QRCodeCreator: React.FC = () => {
 
                 <Button
                   onClick={handleGenerate}
-                  className="w-full mt-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-6 text-base shadow-md"
+                  disabled={isGenerating}
+                  className="w-full mt-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-6 text-base shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <QrCode className="w-5 h-5 mr-2" />
-                  Generate QR Code
+                  {isGenerating ? (
+                    <>
+                      <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <QrCode className="w-5 h-5 mr-2" />
+                      Generate QR Code
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>
