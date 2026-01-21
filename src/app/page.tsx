@@ -61,9 +61,9 @@ const QRCodeCreator: React.FC = () => {
   const [isDark, setIsDark] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<QRType>("wifi");
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
-  const [qrColor, setQrColor] = useState<string>("#ffffff");
-  const [qrBgColor, setQrBgColor] = useState<string>("#0f172a");
-  const [qrSize, setQrSize] = useState<number>(300);
+  const [qrColor, setQrColor] = useState<string>("#000000");
+  const [qrBgColor, setQrBgColor] = useState<string>("#FFFFFF");
+  const [qrSize, setQrSize] = useState<number>(200);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
@@ -97,11 +97,6 @@ const QRCodeCreator: React.FC = () => {
     } else {
       document.documentElement.classList.remove("dark");
     }
-  }, [isDark]);
-
-  useEffect(() => {
-    setQrColor("#000000"); // always dark
-    setQrBgColor("#FFFFFF"); // always light
   }, [isDark]);
 
   const generateQRData = (): string => {
@@ -182,6 +177,7 @@ const QRCodeCreator: React.FC = () => {
     }
   };
 
+  // Regenerate QR code when customization changes (only if QR already exists)
   useEffect(() => {
     if (qrDataUrl) {
       handleGenerate();
@@ -304,52 +300,6 @@ const QRCodeCreator: React.FC = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label
-                    htmlFor="qrColor"
-                    className="text-sm font-medium text-slate-700 dark:text-slate-300"
-                  >
-                    Foreground
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="qrColor"
-                      type="color"
-                      value={qrColor}
-                      onChange={(e) => setQrColor(e.target.value)}
-                      className="w-14 h-10 p-1 border-slate-300 dark:border-slate-700"
-                    />
-                    <Input
-                      type="text"
-                      value={qrColor}
-                      onChange={(e) => setQrColor(e.target.value)}
-                      className="flex-1 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="bgColor"
-                    className="text-sm font-medium text-slate-700 dark:text-slate-300"
-                  >
-                    Background
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="bgColor"
-                      type="color"
-                      value={qrBgColor}
-                      onChange={(e) => setQrBgColor(e.target.value)}
-                      className="w-14 h-10 p-1 border-slate-300 dark:border-slate-700"
-                    />
-                    <Input
-                      type="text"
-                      value={qrBgColor}
-                      onChange={(e) => setQrBgColor(e.target.value)}
-                      className="flex-1 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label
                     htmlFor="size"
                     className="text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
@@ -441,7 +391,7 @@ const QRCodeCreator: React.FC = () => {
                         onChange={(e) =>
                           setWifiData({ ...wifiData, ssid: e.target.value })
                         }
-                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800"
+                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                     <div className="space-y-2">
@@ -459,7 +409,7 @@ const QRCodeCreator: React.FC = () => {
                         onChange={(e) =>
                           setWifiData({ ...wifiData, password: e.target.value })
                         }
-                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800"
+                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                     <div className="space-y-2">
@@ -506,7 +456,7 @@ const QRCodeCreator: React.FC = () => {
                             upiId: e.target.value,
                           })
                         }
-                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800"
+                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                     <div className="space-y-2">
@@ -527,7 +477,7 @@ const QRCodeCreator: React.FC = () => {
                             amount: e.target.value,
                           })
                         }
-                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800"
+                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                     <div className="space-y-2">
@@ -547,7 +497,7 @@ const QRCodeCreator: React.FC = () => {
                             note: e.target.value,
                           })
                         }
-                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800"
+                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                   </TabsContent>
@@ -568,7 +518,7 @@ const QRCodeCreator: React.FC = () => {
                         onChange={(e) =>
                           setEventData({ ...eventData, name: e.target.value })
                         }
-                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800"
+                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                     <div className="space-y-2">
@@ -588,7 +538,7 @@ const QRCodeCreator: React.FC = () => {
                             location: e.target.value,
                           })
                         }
-                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800"
+                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -609,7 +559,7 @@ const QRCodeCreator: React.FC = () => {
                               start: e.target.value,
                             })
                           }
-                          className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800"
+                          className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                         />
                       </div>
                       <div className="space-y-2">
@@ -626,7 +576,7 @@ const QRCodeCreator: React.FC = () => {
                           onChange={(e) =>
                             setEventData({ ...eventData, end: e.target.value })
                           }
-                          className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800"
+                          className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                         />
                       </div>
                     </div>
@@ -647,7 +597,7 @@ const QRCodeCreator: React.FC = () => {
                             description: e.target.value,
                           })
                         }
-                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800"
+                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                   </TabsContent>
@@ -666,7 +616,7 @@ const QRCodeCreator: React.FC = () => {
                         placeholder="https://example.com"
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
-                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800"
+                        className="border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                     <div className="p-4 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
@@ -692,7 +642,7 @@ const QRCodeCreator: React.FC = () => {
                         placeholder="Enter any text to encode..."
                         value={plainText}
                         onChange={(e) => setPlainText(e.target.value)}
-                        className="w-full border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 rounded-md p-3 resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 rounded-md p-3 resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent [color-scheme:light] dark:[color-scheme:dark]"
                       />
                     </div>
                   </TabsContent>
